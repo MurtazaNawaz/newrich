@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Form Page</title>
+    <!-- include bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="mt-4">Form</h1>
+
+        <!-- dev form to display the entry's meta information -->
+        <form id="entry-form">
+            <!-- form fields will be populated by JavaScript -->
+        </form>
+    </div>
+
+    <!-- include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
+    <!-- fetch and display entry data -->
+    <script>
+        // dev get form_id
+        function getFormIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('form_id');
+        }
+
+        // Fetch form configurations
+        function fetchFormConfigurations(formId) {
+            $.get(`/newrich/api.php?form_configurations=true&form_id=${formId}`, function(data) {
+                const formConfig = JSON.parse(data);
+                createForm(formConfig);
+            }).fail(function(error) {
+                console.error('Failed to fetch form.', error);
+                alert('An error occurred.');
+            });
+        }
+
+        // create form
+        function createForm(formConfig) {
+            const form = $('#entry-form');
+            form.empty();
+
+            formConfig.fields.forEach(field => {
+                const formGroup = $('<div>').addClass('form-group');
+
+                const label = $('<label>').attr('for', field.name).text(field.label);
+
+                let input;
+                // handle types
+				if (field.type === 'input' || field.type === 'textarea') {
+					// create input or textarea element
+					input = $(`<${field.type}>`)
+						.addClass('form-control')
+						.attr('name', field.name)
+						.attr('id', field.name)
+						.attr('placeholder', field.placeholder || '');
+				} else if (field.type === 'select' || field.type === 'radio') {
+					// dev Create select or radio element
+					input = createFieldOptions(field);
+				} else if (field.type === 'checkbox') {
+					// create checkbox input element
+					input = $('<input>')
+						.attr('type', 'checkbox')
+						.attr('name', field.name)
+						.attr('id', field.name)
+						.addClass('form-check-input');
+					
+					// wrap the checkbox in a div 
+					formGroup.addClass('form-check');
+					formGroup.append(input).append(label);
+				}
+
+				// Append the input element
+				if (input && field.type !== 'checkbox') {
+					formGroup.append(label).append(input);
+				}
+
+				// append the form
+				form.append(formGroup);
+            });
+			
+			// hidden honeypot field
+			const honeypotField = $('<input>')
+				.attr('type', 'text')
+				.attr('name', 'honeypot')
+				.addClass('honeypot') 
+				.css('display', 'none'); // Hide
+
+			form.append(honeypotField);
+
+            // add a submit button
+            form.append('<button type="submit" class="btn btn-primary">Submit</button>');
+
+            // attach form submitlistener
+            form.on('submit', function(e) {
+                e.preventDefault();
+                handleFormSubmit(formConfig);
+            });
+        }
+
+        function createFieldOptions(field) {
+			let inputGroup;
+
+			if (field.type === 'select') {
+				// create a select element
+				inputGroup = $('<select>')
+					.addClass('form-control')
+					.attr('name', field.name)
+					.attr('id', field.name);
+
+				// check if options exist
+				if (Array.isArray(field.options)) {
+					field.options.forEach(option => {
+						const optionElement = $('<option>')
+							.attr('value', option.value)
+							.text(option.label);
+						inputGroup.append(optionElement);
+					});
+				}
+			} else if (field.type === 'radio' || field.type === 'checkbox') {
+				// create a div
+				inputGroup = $('<div>').addClass('form-check');
+
+				// check if options exist
+				if (Array.isArray(field.options)) {
+					field.options.forEach(option => {
+						const input = $('<input>')
+							.attr('type', field.type)
+							.attr('name', field.name)
+							.attr('value', option.value)
+							.attr('id', `${field.name}_${option.value}`)
+							.addClass('form-check-input');
+
+						const label = $('<label>')
+							.attr('for', `${field.name}_${option.value}`)
+							.text(option.label)
+							.addClass('form-check-label');
+
+						inputGroup.append($('<div>').addClass('form-check').append(input).append(label));
+					});
+				}
+			}
+
+			return inputGroup;
+		}
+
+
+
+        // handle form submission
+        function handleFormSubmit(formConfig) {
+            const form = $('#entry-form');
+			const formData = form.serializeArray();
+
+			// client-side validation
+			const validationErrors = validateFormData(formConfig, formData);
+			if (validationErrors.length > 0) {
+				alert('Validation errors:\n' + validationErrors.join('\n'));
+				return;
+			}
+
+			// convert form data to JSON
+			const formDataJson = JSON.stringify(formData.reduce((acc, field) => {
+				acc[field.name] = field.value;
+				return acc;
+			}, {}));
+
+			// submit form via AJAX
+			$.ajax({
+				url: `/newrich/api.php?submit_form=true&form_id=${getFormIdFromUrl()}`,
+				method: 'POST',
+				contentType: 'application/json', 
+				data: JSON.stringify({ formData: formDataJson }), 
+				success: function(response) {
+					// Handlesubmission
+					//alert('Data submitted successfully');
+					//console.log(response);
+					// Parse response
+					try {
+						const startIndex = response.indexOf("{");
+						const jsonResponse = response.substring(startIndex);
+						const parsedResponse = JSON.parse(jsonResponse);
+						
+						// display message
+						alert(parsedResponse.message);
+					} catch (error) {
+						// handle errors
+						console.error('Error parsing JSON response:', error);
+						alert('An error occurred while processing the response.');
+					}
+					console.log(response);
+				},
+				error: function(error) {
+					// handle errors
+					console.error('Failed to submit form:', error);
+					alert('An error occurred while submitting the form. Please try again later.');
+				}
+			});
+        }
+
+        // client-side validation
+        function validateFormData(formConfig, formData) {
+            const errors = [];
+
+            // convert data for easier access
+            const formDataMap = formData.reduce((acc, field) => {
+                acc[field.name] = field.value;
+                return acc;
+            }, {});
+
+            formConfig.fields.forEach(field => {
+                const fieldValue = formDataMap[field.name] || '';
+
+                // dev check required and empty
+                if (field.required && !fieldValue.trim()) {
+                    errors.push(`${field.label} is required.`);
+                }
+
+            });
+
+            return errors;
+        }
+
+        // fetch the form
+        $(document).ready(() => {
+            const formId = getFormIdFromUrl();
+            if (formId) {
+                fetchFormConfigurations(formId);
+            }
+        });
+    </script>
+</body>
+
+</html>

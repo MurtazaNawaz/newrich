@@ -1,0 +1,25 @@
+version: '3.9' # Note that the `version` key might trigger a warning if not specified correctly
+
+services:
+  web:
+    build:
+      context: . # Ensure this is pointing to the correct context directory
+      dockerfile: Dockerfile # Optional, as Dockerfile is the default name
+    ports:
+      - "80:80"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_DATABASE: newrich
+      DB_USERNAME: root
+      DB_PASSWORD: "" # Specify your database password (empty if no password)
+  db:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: "" # Specify your MySQL root password (empty if no password)
+      MYSQL_DATABASE: newrich
+      MYSQL_USER: root
+      MYSQL_PASSWORD: "" # Specify your MySQL user password (empty if no password)
+    ports:
+      - "3307:3306"

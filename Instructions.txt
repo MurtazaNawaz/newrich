@@ -1,0 +1,97 @@
+Instructions for Setting Up the PHP Application
+--------------------------------------------
+Database Configuration
+----------------------
+The database file is placed in the db folder.
+
+Database connection details are as follows
+Database Name: newrich
+Username: root
+Password:
+Host: localhost
+
+
+API Endpoints
+----------------------
+Below are the API endpoints used in this project
+
+1. Create Form:
+Endpoint: /api.php?create_form=true
+Method: POST
+Description: Creates a new dynamic form.
+Request Body Example:
+json
+Copy code
+{
+    "form_name": "Sample Form",
+    "fields": [
+        {
+            "type": "input",
+            "name": "username",
+            "label": "Username",
+            "placeholder": "Enter your username",
+            "required": true,
+            "sendWithEmail": true
+        },
+        {
+            "type": "textarea",
+            "name": "description",
+            "label": "Description",
+            "placeholder": "Enter a brief description",
+            "required": false,
+            "sendWithEmail": false
+        },
+        {
+            "type": "select",
+            "name": "country",
+            "label": "Country",
+            "options": [
+                { "value": "us", "label": "United States" },
+                { "value": "ca", "label": "Canada" },
+                { "value": "mx", "label": "Mexico" }
+            ],
+            "required": true,
+            "sendWithEmail": true
+        },
+        {
+            "type": "radio",
+            "name": "gender",
+            "label": "Gender",
+            "options": [
+                { "value": "male", "label": "Male" },
+                { "value": "female", "label": "Female" }
+            ],
+            "required": true,
+            "sendWithEmail": true
+        },
+        {
+            "type": "checkbox",
+            "name": "subscribe",
+            "label": "Subscribe to newsletter",
+            "required": false,
+            "sendWithEmail": false
+        }
+    ]
+}
+
+
+2. Submit Form:
+Endpoint: /api.php?form_id=<form_id>&submit_form=true
+Method: POST
+Description: Submits data for a specific form.
+Request Body Example:
+json
+Copy code
+{
+    "username": "john_doe",
+    "description": "This is a sample description.",
+    "country": "us",
+    "gender": "male",
+    "subscribe": true
+}
+
+
+3. Fetch Form:
+Endpoint: /api.php?form_id=<form_id>
+Method: GET
+Description: Fetches the structure of a specific form by ID.

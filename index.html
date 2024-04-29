@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Submitted Forms</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+	<!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
+	<!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="mt-4">Submitted Forms</h1>
+
+        <!-- DataTable -->
+        <table id="forms-table" class="display">
+            <thead>
+                <tr>
+                    <th>id</th>
+                    <th>created_at</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data -->
+            </tbody>
+        </table>
+    </div>
+
+    
+
+    <!-- display submitted forms -->
+    <script>
+        $(document).ready(function() {
+            // Dev Initialize DataTable
+			const dataTable = $('#forms-table').DataTable({
+				columns: [
+					{ data: 'id', title: 'ID' },
+					{ data: 'created_at', title: 'Created At' }
+				]
+			});
+
+            // dev fetch backend API
+            $.ajax({
+				url: '/newrich/api.php?list_entries=true',
+				method: 'GET',
+				dataType: 'json',
+				success: function(data) {
+					// Dev populate data
+					dataTable.clear().rows.add(data).draw();
+				},
+				error: function(error) {
+					console.error('Failed to fetch submitted forms:', error);
+					alert('An error occurred while fetching submitted forms. Please try again later.');
+				}
+			});
+
+            // add click listener
+            $('#forms-table tbody').on('click', 'tr', function() {
+                const formData = dataTable.row(this).data();
+				const formId = formData.id;
+				// Open a new tab
+				window.open(`form.html?form_id=${formId}`, '_blank');
+            });
+        });
+    </script>
+</body>
+
+</html>
